@@ -1,0 +1,172 @@
+#GENETIC ALGORITHM FOR OPTIMIZATION
+import random
+
+# === Genetic Algorithm Parameters ===
+POP_SIZE = 4              # Population size (starting with 4)
+GENES = 5                 # Number of bits (0-31 -> 5-bit binary)
+GENERATIONS = 5           # Number of generations
+
+# Fitness function: f(x) = x^2
+def fitness(x):
+    return x**2
+
+# Convert integer to binary chromosome
+def to_binary(x):
+    return format(x, f'0{GENES}b')
+
+# Convert binary chromosome to integer
+def to_int(chrom):
+    return int(chrom, 2)
+
+# Roulette Wheel Selection
+def roulette_selection(pop, fitnesses):
+    total_fit = sum(fitnesses)
+    probs = [f/total_fit for f in fitnesses]
+    cum_probs = []
+    csum = 0
+    for p in probs:
+        csum += p
+        cum_probs.append(csum)
+    r = random.random()
+    for i, cp in enumerate(cum_probs):
+        if r <= cp:
+            return pop[i]
+    return pop[-1]
+
+# Crossover with random point
+def crossover(parent1, parent2):
+    point = random.randint(1, GENES-1)  # choose random crossover point
+    child1 = parent1[:point] + parent2[point:]
+    child2 = parent2[:point] + parent1[point:]
+    return child1, child2, point
+
+# Mutation with random point
+def mutate(chrom):
+    point = random.randint(0, GENES-1)  # choose random mutation bit
+    chrom = list(chrom)
+    chrom[point] = "1" if chrom[point] == "0" else "0"
+    return "".join(chrom), point
+
+# === Main Genetic Algorithm ===
+def genetic_algorithm():
+    # Step 1: Create initial population
+    population = random.sample(range(0, 32), POP_SIZE)
+    population = [to_binary(x) for x in population]
+
+    best_solution = None
+    best_fitness = -1
+
+    for gen in range(GENERATIONS):
+        print(f"\n=== Generation {gen+1} ===")
+
+        # Step 2: Evaluate fitness
+        x_values = [to_int(ch) for ch in population]
+        fitnesses = [fitness(x) for x in x_values]
+
+        total_fit = sum(fitnesses)
+        avg_fit = total_fit / len(fitnesses)
+        max_fit = max(fitnesses)
+
+        print("Population (binary):", population)
+        print("X values:", x_values)
+        print("Fitness values:", fitnesses)
+        print(f"Sum={total_fit}, Avg={avg_fit:.2f}, Max={max_fit}")
+
+        # Track best solution
+        for x, fit in zip(x_values, fitnesses):
+            if fit > best_fitness:
+                best_fitness = fit
+                best_solution = x
+
+        # Step 3: Selection + Reproduction
+        new_population = []
+        for _ in range(POP_SIZE // 2):
+            p1 = roulette_selection(population, fitnesses)
+            p2 = roulette_selection(population, fitnesses)
+
+            # Step 4: Crossover
+            c1, c2, cross_point = crossover(p1, p2)
+            print(f"Crossover between {p1} & {p2} at point {cross_point} -> {c1}, {c2}")
+
+            # Step 5: Mutation
+            c1, mut1 = mutate(c1)
+            c2, mut2 = mutate(c2)
+            print(f"Mutation at {mut1} in child1 -> {c1}")
+            print(f"Mutation at {mut2} in child2 -> {c2}")
+
+            new_population.extend([c1, c2])
+
+        population = new_population
+
+    print("\n=== Final Result ===")
+    print("Best solution found:", best_solution)
+    print("Best fitness (f(x)):", best_fitness)
+
+# Run the GA
+genetic_algorithm()
+
+
+output:
+=== Generation 1 ===
+Population (binary): ['10111', '11001', '10001', '00111']
+X values: [23, 25, 17, 7]
+Fitness values: [529, 625, 289, 49]
+Sum=1492, Avg=373.00, Max=625
+Crossover between 10111 & 10111 at point 2 -> 10111, 10111
+Mutation at 4 in child1 -> 10110
+Mutation at 3 in child2 -> 10101
+Crossover between 11001 & 10001 at point 4 -> 11001, 10001
+Mutation at 1 in child1 -> 10001
+Mutation at 3 in child2 -> 10011
+
+=== Generation 2 ===
+Population (binary): ['10110', '10101', '10001', '10011']
+X values: [22, 21, 17, 19]
+Fitness values: [484, 441, 289, 361]
+Sum=1575, Avg=393.75, Max=484
+Crossover between 10101 & 10110 at point 2 -> 10110, 10101
+Mutation at 4 in child1 -> 10111
+Mutation at 4 in child2 -> 10100
+Crossover between 10110 & 10101 at point 1 -> 10101, 10110
+Mutation at 3 in child1 -> 10111
+Mutation at 4 in child2 -> 10111
+
+=== Generation 3 ===
+Population (binary): ['10111', '10100', '10111', '10111']
+X values: [23, 20, 23, 23]
+Fitness values: [529, 400, 529, 529]
+Sum=1987, Avg=496.75, Max=529
+Crossover between 10111 & 10111 at point 1 -> 10111, 10111
+Mutation at 1 in child1 -> 11111
+Mutation at 0 in child2 -> 00111
+Crossover between 10111 & 10111 at point 3 -> 10111, 10111
+Mutation at 4 in child1 -> 10110
+Mutation at 3 in child2 -> 10101
+
+=== Generation 4 ===
+Population (binary): ['11111', '00111', '10110', '10101']
+X values: [31, 7, 22, 21]
+Fitness values: [961, 49, 484, 441]
+Sum=1935, Avg=483.75, Max=961
+Crossover between 10110 & 11111 at point 3 -> 10111, 11110
+Mutation at 4 in child1 -> 10110
+Mutation at 1 in child2 -> 10110
+Crossover between 10110 & 10110 at point 3 -> 10110, 10110
+Mutation at 0 in child1 -> 00110
+Mutation at 3 in child2 -> 10100
+
+=== Generation 5 ===
+Population (binary): ['10110', '10110', '00110', '10100']
+X values: [22, 22, 6, 20]
+Fitness values: [484, 484, 36, 400]
+Sum=1404, Avg=351.00, Max=484
+Crossover between 10110 & 10110 at point 1 -> 10110, 10110
+Mutation at 0 in child1 -> 00110
+Mutation at 2 in child2 -> 10010
+Crossover between 10110 & 10110 at point 4 -> 10110, 10110
+Mutation at 0 in child1 -> 00110
+Mutation at 1 in child2 -> 11110
+
+=== Final Result ===
+Best solution found: 31
+Best fitness (f(x)): 961
